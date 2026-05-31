@@ -1,5 +1,5 @@
 {
-    "name": "test-utils",
+    "name": "oleshko-test-utils",
     "displayName": "Oleshko's Test Utils",
     "description": "Handy testing helpers for VS Code: run individual describe/it/test blocks with a click. Supports Vitest and Jest.",
     "version": "0.1.0",
