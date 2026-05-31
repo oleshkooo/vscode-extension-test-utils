@@ -1,7 +1,9 @@
 import { singleton } from 'tsyringe'
-import { window, type Terminal, type Uri } from 'vscode'
+import { ThemeIcon, window, type Terminal, type Uri } from 'vscode'
 import { EXTENSION_DISPLAY_NAME } from '../constants'
 import { Lifecycle } from '../lifecycle/lifecycle'
+
+const TERMINAL_ICON = new ThemeIcon('beaker')
 
 @singleton()
 export class TestTerminal {
@@ -23,7 +25,7 @@ export class TestTerminal {
 
     private ensure(cwd: Uri | undefined): Terminal {
         if (!this.terminal) {
-            this.terminal = window.createTerminal({ name: EXTENSION_DISPLAY_NAME, cwd })
+            this.terminal = window.createTerminal({ name: EXTENSION_DISPLAY_NAME, cwd, iconPath: TERMINAL_ICON })
         }
         return this.terminal
     }

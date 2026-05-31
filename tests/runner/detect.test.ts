@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { selectPackageManager, selectRunner, type LockfilePresence } from '../../src/runner/helpers/detect'
+import {
+    ancestorDirectories,
+    selectPackageManager,
+    selectRunner,
+    type LockfilePresence
+} from '../../src/runner/helpers/detect'
 
 const NONE: LockfilePresence = { npm: false, yarn: false, pnpm: false, bun: false }
 
@@ -36,5 +41,24 @@ describe('selectRunner', () => {
     it('falls back to vitest when nothing is detected', () => {
         expect(selectRunner('auto', undefined)).toBe('vitest')
         expect(selectRunner('auto', new Set())).toBe('vitest')
+    })
+})
+
+describe('ancestorDirectories', () => {
+    it('lists directories from the file dir up to the boundary, inclusive', () => {
+        expect(ancestorDirectories('/repo/packages/app/src', '/repo')).toEqual([
+            '/repo/packages/app/src',
+            '/repo/packages/app',
+            '/repo/packages',
+            '/repo'
+        ])
+    })
+
+    it('returns just the boundary when the file sits at the root', () => {
+        expect(ancestorDirectories('/repo', '/repo')).toEqual(['/repo'])
+    })
+
+    it('returns nothing when the directory is outside the boundary', () => {
+        expect(ancestorDirectories('/elsewhere/src', '/repo')).toEqual([])
     })
 })

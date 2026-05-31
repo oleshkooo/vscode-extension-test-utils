@@ -59,6 +59,15 @@ describe('buildRunnerCommand', () => {
         expect(command).toBe("npx vitest run 'a.test.ts' -t 'adds 1 \\+ 1 \\(fast\\)'")
     })
 
+    it('normalizes windows path separators to posix', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.vitest,
+            packageManager: 'npm',
+            file: 'tests\\parser\\babel-parser.test.ts'
+        })
+        expect(command).toBe("npx vitest run 'tests/parser/babel-parser.test.ts'")
+    })
+
     it('escapes single quotes for the shell', () => {
         const command = buildRunnerCommand({
             spec: RUNNER_SPECS.vitest,

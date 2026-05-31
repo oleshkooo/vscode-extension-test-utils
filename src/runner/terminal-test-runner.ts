@@ -1,11 +1,11 @@
-import { relative } from 'node:path'
+import { dirname, relative } from 'node:path'
 import { singleton } from 'tsyringe'
 import { Uri, workspace } from 'vscode'
 import { ConfigService } from '../config/config.service'
 import { Logger } from '../logger/base-logger'
 import { TestRunner } from './base-runner'
 import { buildRunnerCommand, RUNNER_SPECS } from './helpers/command'
-import { selectPackageManager, selectRunner } from './helpers/detect'
+import { ancestorDirectories, selectPackageManager, selectRunner } from './helpers/detect'
 import { TestTerminal } from './test-terminal'
 import type { PackageManager, RunnerKind, TestRunRequest } from './types'
 
@@ -27,10 +27,10 @@ export class TerminalTestRunner extends TestRunner {
     }
 
     async run(request: TestRunRequest): Promise<void> {
-        const folder = workspace.getWorkspaceFolder(Uri.file(request.filePath))?.uri
-        const packageManager = await this.detectPackageManager(folder)
-        const runner = await this.detectRunner(folder)
-        const file = folder ? relative(folder.fsPath, request.filePath) : request.filePath
+        const root = await this.findProjectRoot(Uri.file(request.filePath))
+        const packageManager = await this.detectPackageManager(root)
+        const runner = await this.detectRunner(root)
+        const file = root ? relative(root.fsPath, request.filePath) : request.filePath
 
         const command = buildRunnerCommand({
             spec: RUNNER_SPECS[runner],
@@ -40,7 +40,17 @@ export class TerminalTestRunner extends TestRunner {
         })
 
         this.logger.info({ command, runner, packageManager }, 'test.run')
-        this.terminal.run(command, folder, this.cfg.runner.autoReveal)
+        this.terminal.run(command, root, this.cfg.runner.autoReveal)
+    }
+
+    private async findProjectRoot(fileUri: Uri): Promise<Uri | undefined> {
+        const workspaceFolder = workspace.getWorkspaceFolder(fileUri)?.uri
+        if (!workspaceFolder) return undefined
+
+        for (const dir of ancestorDirectories(dirname(fileUri.fsPath), workspaceFolder.fsPath)) {
+            if (await this.exists(Uri.file(dir), 'package.json')) return Uri.file(dir)
+        }
+        return workspaceFolder
     }
 
     private async detectPackageManager(folder: Uri | undefined): Promise<PackageManager> {

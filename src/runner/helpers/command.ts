@@ -20,11 +20,15 @@ export const RUNNER_SPECS: Record<RunnerKind, RunnerSpec> = {
 }
 
 export function buildRunnerCommand({ spec, packageManager, file, testName }: BuildCommandInput): string {
-    const parts = [...EXEC_PREFIX[packageManager], spec.binary, ...spec.baseArgs, shellQuote(file)]
+    const parts = [...EXEC_PREFIX[packageManager], spec.binary, ...spec.baseArgs, shellQuote(toPosixPath(file))]
     if (testName !== undefined && testName.length > 0) {
         parts.push(spec.nameFlag, shellQuote(escapeRegExp(testName)))
     }
     return parts.join(' ')
+}
+
+function toPosixPath(value: string): string {
+    return value.replace(/\\/g, '/')
 }
 
 function escapeRegExp(value: string): string {

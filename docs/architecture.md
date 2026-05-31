@@ -92,8 +92,11 @@ Useful for flushing logs/telemetry; not used for VSCode resources.
 - **Runner is data, not a class hierarchy.** Vitest and Jest differ only in the
   command they build (binary, subcommand, name flag) — captured as a
   `RunnerSpec` in [`runner/helpers/command.ts`](../src/runner/helpers/command.ts).
-  A single `TerminalTestRunner` detects the runner + package manager for the
-  file's workspace folder (`auto` reads `package.json`; lockfiles pick the PM
-  exec prefix), builds the command, and runs it in one reused integrated
-  terminal. Pure command/detection logic stays in `helpers/` and is unit-tested
-  without `vscode`.
+  A single `TerminalTestRunner` resolves the file's **project root** — the
+  nearest `package.json` walking up to the workspace folder — and uses it as the
+  terminal cwd and the base for the relative file path (so monorepo sub-packages
+  run against their own config). It detects the runner + package manager for
+  that root (`auto` reads `package.json`; lockfiles pick the PM exec prefix),
+  builds the command (POSIX-normalized path), and runs it in one reused
+  integrated terminal. Pure command/detection logic stays in `helpers/` and is
+  unit-tested without `vscode`.
