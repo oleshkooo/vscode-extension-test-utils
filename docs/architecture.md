@@ -31,12 +31,13 @@ flowchart LR
 1. **Bootstrap** (`src/main.ts`) resolves `ConfigService`, registers
    infrastructure tokens (logger, telemetry), attaches `Lifecycle` to the
    extension context, and starts the `ConfigReloader`.
-2. **CodeLens** (planned) — `RunCodeLensProvider` parses the active document for
+2. **CodeLens** — `RunCodeLensProvider` parses the active document for
    `describe`/`it`/`test` calls, emits one "Run" lens per block with its line
-   range and resolved test name.
-3. **Run** (planned) — clicking a lens fires a command carrying the file path +
-   test name. `TestRunner` detects Vitest or Jest, builds the scoped command,
-   and runs it in the VS Code integrated terminal.
+   range and resolved test name (the full ancestor path, joined by spaces;
+   dynamic / `.each` titles fall back to running the whole file).
+3. **Run** — clicking a lens fires the `oleshkoTestUtils.runTest` command
+   carrying the file path + test name. `TestRunner` detects Vitest or Jest,
+   builds the scoped command, and runs it in the VS Code integrated terminal.
 
 The feature works per open document — there is no whole-workspace scan,
 watcher, or symbol index. Parsing is cheap and local.
@@ -53,16 +54,10 @@ src/
 ├── logger/                        Pino → VSCode LogOutputChannel
 ├── telemetry/                     vscode.env.createTelemetryLogger + noop
 ├── parser/                        describe/it/test extraction from a document
+├── providers/                     RunCodeLensProvider
 ├── runner/                        TestRunner: detect + build command + terminal
 ├── constants.ts                   IDs, namespaces, log level + runner enums
 └── types/                         tiny shared type helpers
-```
-
-Planned feature domains (not yet implemented):
-
-```
-src/
-└── providers/                     RunCodeLensProvider
 ```
 
 Each `domain/` follows the same shape:

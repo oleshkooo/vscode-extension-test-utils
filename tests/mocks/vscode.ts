@@ -56,9 +56,25 @@ export interface Disposable {
     dispose(): void
 }
 
+export interface Command {
+    title: string
+    command: string
+    arguments?: unknown[]
+}
+
+export class CodeLens {
+    constructor(
+        public readonly range: Range,
+        public readonly command?: Command
+    ) {}
+}
+
 export const workspace = {
     asRelativePath(uri: Uri | string): string {
         return typeof uri === 'string' ? uri : uri.toString()
+    },
+    onDidChangeConfiguration(_listener: (e: unknown) => void): Disposable {
+        return { dispose() {} }
     },
     fs: {
         async readFile(_uri: Uri): Promise<Uint8Array> {

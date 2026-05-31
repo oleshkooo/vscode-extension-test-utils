@@ -10,8 +10,8 @@ Handy testing helpers for VS Code.
 - Works on `*.spec.js`, `*.spec.ts`, `*.test.js`, `*.test.ts`.
 - Supports **Vitest** and **Jest**, auto-detected from the workspace.
 
-> Status: early. The infrastructure (DI container, config, logging) is in
-> place; the CodeLens + runner feature is being built.
+Click a "Run" lens and the matching test runs in the integrated terminal,
+scoped with the runner's `-t` name pattern.
 
 ## Requirements
 
