@@ -160,11 +160,11 @@ To add a setting:
 ## Tests
 
 Vitest, configured in [`vitest.config.ts`](../vitest.config.ts). The `vscode`
-module is aliased to [`tests/mocks/vscode.ts`](../tests/mocks/vscode.ts) so unit
+module is aliased to [`test/mocks/vscode.ts`](../test/mocks/vscode.ts) so unit
 tests run without an Extension Host.
 
 - Unit tests for the parser/runner → vitest, against the mocked `vscode`.
-- Tests live under `tests/`, mirroring the `src/` domain they cover
-  (`tests/parser/...`, `tests/runner/...`).
+- Tests live under `test/`, mirroring the `src/` domain they cover
+  (`test/parser/...`, `test/runner/...`).
 - The mock exposes only the VSCode primitives the code uses; extend it as new
   APIs are exercised.

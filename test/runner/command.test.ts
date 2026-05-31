@@ -63,9 +63,9 @@ describe('buildRunnerCommand', () => {
         const command = buildRunnerCommand({
             spec: RUNNER_SPECS.vitest,
             packageManager: 'npm',
-            file: 'tests\\parser\\babel-parser.test.ts'
+            file: 'test\\parser\\babel-parser.test.ts'
         })
-        expect(command).toBe("npx vitest run 'tests/parser/babel-parser.test.ts'")
+        expect(command).toBe("npx vitest run 'test/parser/babel-parser.test.ts'")
     })
 
     it('escapes single quotes for the shell', () => {
