@@ -1,0 +1,122 @@
+{
+    "name": "test-utils",
+    "displayName": "Oleshko's Test Utils",
+    "description": "Handy testing helpers for VS Code: run individual describe/it/test blocks with a click. Supports Vitest and Jest.",
+    "version": "0.1.0",
+    "publisher": "oleshko",
+    "license": "MIT",
+    "private": false,
+    "type": "module",
+    "main": "./dist/extension.js",
+    "icon": "icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/oleshkooo/vscode-extension-test-utils.git"
+    },
+    "bugs": {
+        "url": "https://github.com/oleshkooo/vscode-extension-test-utils/issues"
+    },
+    "homepage": "https://github.com/oleshkooo/vscode-extension-test-utils#readme",
+    "engines": {
+        "vscode": "^1.96.0",
+        "node": ">=22"
+    },
+    "categories": [
+        "Testing",
+        "Other"
+    ],
+    "keywords": [
+        "test",
+        "testing",
+        "vitest",
+        "jest",
+        "codelens"
+    ],
+    "activationEvents": [
+        "onLanguage:javascript",
+        "onLanguage:typescript"
+    ],
+    "contributes": {
+        "configuration": {
+            "title": "Oleshko's Test Utils",
+            "properties": {
+                "oleshkoTestUtils.logLevel": {
+                    "type": "string",
+                    "enum": [
+                        "trace",
+                        "debug",
+                        "info",
+                        "warn",
+                        "error",
+                        "silent"
+                    ],
+                    "default": "info",
+                    "description": "Log verbosity in the Oleshko's Test Utils output channel."
+                },
+                "oleshkoTestUtils.runner.runner": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "vitest",
+                        "jest"
+                    ],
+                    "default": "auto",
+                    "description": "Test runner to use. 'auto' detects Vitest or Jest from the workspace."
+                },
+                "oleshkoTestUtils.runner.autoReveal": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Reveal the integrated terminal automatically when a test is run."
+                },
+                "oleshkoTestUtils.codeLens.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the 'Run' CodeLens above describe/it/test blocks in test files."
+                },
+                "oleshkoTestUtils.telemetry.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Report anonymous usage telemetry through the VS Code telemetry channel. Respects the global telemetry setting."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "prepare": "husky || true",
+        "build": "tsdown",
+        "build:watch": "tsdown --watch",
+        "dev": "concurrently --raw npm:build:watch npm:dev:types",
+        "dev:types": "tsc --noEmit --watch --preserveWatchOutput",
+        "typecheck": "tsc --noEmit",
+        "format": "prettier -w .",
+        "lint-staged": "lint-staged",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "package": "vsce package",
+        "vscode:prepublish": "npm run build -- --env.NODE_ENV=production",
+        "publish": "vsce publish"
+    },
+    "dependencies": {
+        "pino": "10.3.1",
+        "pino-pretty": "13.1.3",
+        "reflect-metadata": "0.2.2",
+        "tsyringe": "4.10.0",
+        "zod": "4.4.1"
+    },
+    "devDependencies": {
+        "@swc/core": "^1.15.40",
+        "@types/node": "22.10.7",
+        "@types/vscode": "1.96.0",
+        "@vitest/coverage-v8": "^4.1.7",
+        "@vscode/vsce": "3.2.1",
+        "concurrently": "9.2.1",
+        "husky": "9.1.7",
+        "lint-staged": "16.4.0",
+        "prettier": "3.8.3",
+        "tsdown": "0.22.1",
+        "typescript": "6.0.3",
+        "unplugin-swc": "^1.5.9",
+        "vitest": "^4.1.7"
+    }
+}
