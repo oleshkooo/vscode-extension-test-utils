@@ -113,6 +113,26 @@ Never add comments that restate what the code does. Never add JSDoc summaries
 to internal classes — names should carry that load. Public/exported entry
 points may get one line of intent if the name alone is not enough.
 
+## In-file ordering
+
+Lay out every file top-to-bottom in a fixed order. Omit sections that don't
+apply; never interleave them.
+
+**Source files:**
+
+1. types / interfaces
+2. constants / variables
+3. classes
+4. functions
+
+**Test files:**
+
+1. types / interfaces
+2. constants / variables
+3. classes (test doubles, fixtures)
+4. setup functions (helpers, factories)
+5. test cases (`describe` / `it`)
+
 ## Imports
 
 - **`import type`** for type-only imports (`verbatimModuleSyntax` requires it).

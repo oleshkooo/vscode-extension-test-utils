@@ -45,3 +45,10 @@ to the project.
    field updates both Zod and `package.json::contributes.configuration`.
 7. **Diagrams in docs are mermaid**, not ASCII. GitHub renders them inline.
    No `pre`-formatted boxes, no images for things mermaid can express.
+8. **In-file ordering is fixed.** Lay out every file top-to-bottom in this
+   order (omit sections that don't apply):
+    - **Source files**: types/interfaces → constants/variables → classes →
+      functions.
+    - **Test files**: types/interfaces → constants/variables → classes (test
+      doubles, fixtures) → setup functions (helpers, factories) → test cases
+      (`describe`/`it`).

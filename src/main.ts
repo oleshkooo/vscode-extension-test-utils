@@ -6,6 +6,8 @@ import { EXTENSION_DISPLAY_NAME } from './constants'
 import { Lifecycle } from './lifecycle/lifecycle'
 import { pickLogger } from './logger'
 import { Logger } from './logger/base-logger'
+import { pickTestParser } from './parser'
+import { TestParser } from './parser/base-parser'
 import { pickTelemetryService } from './telemetry'
 import { TelemetryService } from './telemetry/base-telemetry.service'
 
@@ -35,4 +37,5 @@ export async function shutdown(): Promise<void> {
 function registerInfrastructure(config: ConfigService): void {
     container.register(Logger as InjectionToken<Logger>, { useToken: pickLogger() })
     container.register(TelemetryService as InjectionToken<TelemetryService>, { useToken: pickTelemetryService(config) })
+    container.register(TestParser as InjectionToken<TestParser>, { useToken: pickTestParser() })
 }
