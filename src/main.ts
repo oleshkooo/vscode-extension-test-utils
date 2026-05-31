@@ -8,6 +8,8 @@ import { pickLogger } from './logger'
 import { Logger } from './logger/base-logger'
 import { pickTestParser } from './parser'
 import { TestParser } from './parser/base-parser'
+import { pickRunner } from './runner'
+import { TestRunner } from './runner/base-runner'
 import { pickTelemetryService } from './telemetry'
 import { TelemetryService } from './telemetry/base-telemetry.service'
 
@@ -38,4 +40,5 @@ function registerInfrastructure(config: ConfigService): void {
     container.register(Logger as InjectionToken<Logger>, { useToken: pickLogger() })
     container.register(TelemetryService as InjectionToken<TelemetryService>, { useToken: pickTelemetryService(config) })
     container.register(TestParser as InjectionToken<TestParser>, { useToken: pickTestParser() })
+    container.register(TestRunner as InjectionToken<TestRunner>, { useToken: pickRunner() })
 }

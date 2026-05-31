@@ -52,6 +52,8 @@ src/
 ├── lifecycle/                     Disposables, shutdown hooks, error handlers
 ├── logger/                        Pino → VSCode LogOutputChannel
 ├── telemetry/                     vscode.env.createTelemetryLogger + noop
+├── parser/                        describe/it/test extraction from a document
+├── runner/                        TestRunner: detect + build command + terminal
 ├── constants.ts                   IDs, namespaces, log level + runner enums
 └── types/                         tiny shared type helpers
 ```
@@ -60,9 +62,7 @@ Planned feature domains (not yet implemented):
 
 ```
 src/
-├── parser/                        describe/it/test extraction from a document
-├── providers/                     RunCodeLensProvider
-└── runner/                        base + vitest/jest impls + picker
+└── providers/                     RunCodeLensProvider
 ```
 
 Each `domain/` follows the same shape:
@@ -94,6 +94,11 @@ Useful for flushing logs/telemetry; not used for VSCode resources.
   CodeLens provider and parser run in the extension host.
 - **No persistent index.** A test file is parsed on demand when VSCode requests
   CodeLenses for it. Cheap, always fresh, nothing to invalidate.
-- **Runner behind a base class.** Vitest and Jest differ only in how the scoped
-  command is built. The picker swaps implementations; callers depend on the
-  `TestRunner` contract.
+- **Runner is data, not a class hierarchy.** Vitest and Jest differ only in the
+  command they build (binary, subcommand, name flag) — captured as a
+  `RunnerSpec` in [`runner/helpers/command.ts`](../src/runner/helpers/command.ts).
+  A single `TerminalTestRunner` detects the runner + package manager for the
+  file's workspace folder (`auto` reads `package.json`; lockfiles pick the PM
+  exec prefix), builds the command, and runs it in one reused integrated
+  terminal. Pure command/detection logic stays in `helpers/` and is unit-tested
+  without `vscode`.

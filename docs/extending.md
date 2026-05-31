@@ -60,14 +60,24 @@ changes.
 Use case: support a new runner (e.g. Mocha, Node test runner) alongside Vitest
 and Jest.
 
-1. Write the contract once in `src/runner/base-runner.ts` (build a scoped
-   command + run it).
-2. Write the concrete impl `src/runner/<name>-runner.ts` that knows that
-   runner's CLI flags (e.g. `--testNamePattern`, file path argument).
-3. Branch the picker in `src/runner/index.ts` — either on explicit config
-   (`runner.runner`) or on auto-detection from the workspace
-   (`package.json` deps, lockfile, config files).
-4. No consumer changes: the CodeLens command resolves `TestRunner` and calls it.
+A runner is **data, not a subclass**. The differences between Vitest and Jest
+(binary, base args, name-pattern flag) live in `RUNNER_SPECS` in
+[`src/runner/helpers/command.ts`](../src/runner/helpers/command.ts). The single
+`TerminalTestRunner` builds the command from a spec and runs it.
+
+1. Add a `RunnerKind` to [`src/runner/types.ts`](../src/runner/types.ts).
+2. Add its `RunnerSpec` entry to `RUNNER_SPECS`.
+3. Teach `selectRunner` in
+   [`src/runner/helpers/detect.ts`](../src/runner/helpers/detect.ts) how to
+   detect it (which `package.json` dependency implies it).
+4. Add the value to the `oleshkoTestUtils.runner.runner` enum in both
+   `package.json` and `TEST_RUNNERS` in
+   [`src/constants.ts`](../src/constants.ts).
+5. No consumer changes: the CodeLens command resolves `TestRunner` and calls it.
+
+If a runner needs genuinely different _behaviour_ (not just a different
+command string), that's when you reach for a second `TestRunner` implementation
+and a branch in `pickRunner` — but a flag difference is not that.
 
 ## Add a new language provider
 

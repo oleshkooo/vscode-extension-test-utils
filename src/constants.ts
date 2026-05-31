@@ -9,5 +9,5 @@ export const TEST_FILE_PATTERN = '**/*.{spec,test}.{js,ts}'
 export type LogLevel = (typeof LOG_LEVELS)[number]
 export const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as const
 
-export type TestRunner = (typeof TEST_RUNNERS)[number]
+export type TestRunnerSetting = (typeof TEST_RUNNERS)[number]
 export const TEST_RUNNERS = ['auto', 'vitest', 'jest'] as const
