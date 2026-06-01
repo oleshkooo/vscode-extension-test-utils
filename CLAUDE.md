@@ -2,8 +2,8 @@
 
 VSCode extension providing handy testing helpers. The flagship feature is a
 **"Run" CodeLens** rendered above each `describe` / `it` / `test` block in test
-files, letting you run a single block on click. Targets `*.spec.{js,ts}` and
-`*.test.{js,ts}`. Supports **Vitest** and **Jest**.
+files, letting you run a single block on click. Targets `*.spec.{js,ts}`,
+`*.test.{js,ts}` and `*.cy.{js,ts}`. Supports **Vitest**, **Jest** and **Cypress** (Cypress is file-level only: one "Run file" lens at the top, with an environment picker when multiple `cypress.configs` are set).
 
 ## TL;DR
 
@@ -15,7 +15,7 @@ files, letting you run a single block on click. Targets `*.spec.{js,ts}` and
 - **File layout**: domain-sliced, not layer-sliced. `base-*.ts` + concrete
   impls + `index.ts` (picker) per domain.
 - **Test discovery**: parse the active document for `describe`/`it`/`test`
-  calls; no whole-workspace scan. The CodeLens provider works per open file.
+  calls; no whole-workspace scan. The CodeLens provider works per open file and hides itself when the file's nearest `package.json` doesn't list a matching runner (Vitest/Jest/Cypress) — no silent fallback to a runner that isn't installed. Dep reads are cached by `WorkspaceDependencies` and invalidated by a `package.json` file watcher.
 - **Runner**: build the runner command (Vitest / Jest) and run it in the VS
   Code integrated terminal, scoped to the chosen test by name + file path.
 

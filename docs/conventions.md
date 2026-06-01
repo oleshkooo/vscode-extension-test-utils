@@ -83,6 +83,39 @@ container.register(Logger as InjectionToken<Logger>, { useToken: pickLogger() })
 const logger = container.resolve(Logger as InjectionToken<Logger>)
 ```
 
+## Value objects
+
+Not every class is a DI seam. Thin value objects — types whose only job is to
+hold data behind a typed constructor, often subclassing a `vscode` primitive —
+are fine and **don't** need `base-`/`noop-`/`pick*` treatment.
+
+Example in this repo: [`RunFileLens`](../src/providers/run-file-lens.ts) and
+[`RunBlockLens`](../src/providers/run-block-lens.ts) extend `vscode.CodeLens`
+and bundle the `title` + `command` + `arguments` shape so the provider reads
+declaratively (`new RunFileLens(filePath)`) instead of repeating
+`new CodeLens(range, { title, command, arguments })` at every call site.
+
+Rules of thumb:
+
+- **Constructor only.** No state, no methods. The moment you reach for
+  `update()`/`refresh()`/private mutable fields, it's no longer a value object —
+  it probably wants a DI seam (or just a function).
+- **No DI.** Constructed at the call site, not resolved. No `@singleton()`,
+  no constructor injection.
+- **One file per class** still applies — same kebab-case naming, no role
+  suffix needed (`run-file-lens.ts`, not `dto-run-file-lens.ts`).
+- Use `satisfies SomeShape` in the wrapped data (e.g.
+  `arguments: [{ ... } satisfies TestRunRequest]`) so the shape stays
+  checked at compile time.
+
+What's NOT a value object: anything held by `Lifecycle`, anything pulled out
+of the DI container, anything with behavior beyond construction. Those go
+through the DI patterns above.
+
+The "no manager / service-registry classes" anti-pattern in
+[extending.md](./extending.md) is about classes that hold and orchestrate
+other services — not about value objects. Don't conflate them.
+
 ## Noop discipline
 
 If anything can be turned off via config, it gets a noop variant. Consumers

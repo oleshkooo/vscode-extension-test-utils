@@ -14,6 +14,11 @@ const TELEMETRY_DEFAULTS = {
     enabled: true
 }
 
+const cypressConfigEntrySchema = z.object({
+    name: z.string(),
+    configFile: z.string()
+})
+
 export type Config = z.infer<typeof configSchema>
 export const configSchema = z.object({
     logLevel: z.enum(LOG_LEVELS).default('info'),
@@ -32,5 +37,10 @@ export const configSchema = z.object({
         .object({
             enabled: z.boolean().default(TELEMETRY_DEFAULTS.enabled)
         })
-        .default(() => ({ ...TELEMETRY_DEFAULTS }))
+        .default(() => ({ ...TELEMETRY_DEFAULTS })),
+    cypress: z
+        .object({
+            configs: z.array(cypressConfigEntrySchema).default(() => [])
+        })
+        .default(() => ({ configs: [] }))
 })

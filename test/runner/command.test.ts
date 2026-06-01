@@ -23,6 +23,47 @@ describe('buildRunnerCommand', () => {
         expect(command).toBe("npx jest 'src/math.test.ts' -t 'math adds'")
     })
 
+    it('builds a cypress command scoped to the file with --spec', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.cypress,
+            packageManager: 'npm',
+            file: 'cypress/e2e/login.cy.ts'
+        })
+        expect(command).toBe("npx cypress run --spec 'cypress/e2e/login.cy.ts'")
+    })
+
+    it('ignores the test name for cypress (file-level run only)', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.cypress,
+            packageManager: 'npm',
+            file: 'cypress/e2e/login.cy.ts',
+            testName: 'logs in'
+        })
+        expect(command).toBe("npx cypress run --spec 'cypress/e2e/login.cy.ts'")
+    })
+
+    it('appends the cypress config file when given', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.cypress,
+            packageManager: 'npm',
+            file: 'cypress/e2e/login.cy.ts',
+            configFile: 'cypress.staging.config.ts'
+        })
+        expect(command).toBe(
+            "npx cypress run --spec 'cypress/e2e/login.cy.ts' --config-file 'cypress.staging.config.ts'"
+        )
+    })
+
+    it('ignores a config file for runners without a config-file flag', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.vitest,
+            packageManager: 'npm',
+            file: 'a.test.ts',
+            configFile: 'cypress.staging.config.ts'
+        })
+        expect(command).toBe("npx vitest run 'a.test.ts'")
+    })
+
     it('omits the name flag when no test name is given', () => {
         const command = buildRunnerCommand({
             spec: RUNNER_SPECS.vitest,

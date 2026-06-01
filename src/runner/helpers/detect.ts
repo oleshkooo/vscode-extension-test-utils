@@ -1,4 +1,3 @@
-import { dirname } from 'node:path'
 import type { TestRunnerSetting } from '../../constants'
 import type { PackageManager, RunnerKind } from '../types'
 
@@ -9,17 +8,10 @@ export interface LockfilePresence {
     readonly bun: boolean
 }
 
-export function ancestorDirectories(fileDir: string, boundary: string): string[] {
-    const dirs: string[] = []
-    let dir = fileDir
-    while (dir.startsWith(boundary)) {
-        dirs.push(dir)
-        if (dir === boundary) break
-        const parent = dirname(dir)
-        if (parent === dir) break
-        dir = parent
-    }
-    return dirs
+const CYPRESS_FILE = /\.cy\.[jt]s$/
+
+function isCypressFile(fileName: string): boolean {
+    return CYPRESS_FILE.test(fileName)
 }
 
 export function selectPackageManager(present: LockfilePresence): PackageManager {
@@ -29,9 +21,16 @@ export function selectPackageManager(present: LockfilePresence): PackageManager 
     return 'npm'
 }
 
-export function selectRunner(setting: TestRunnerSetting, dependencies: ReadonlySet<string> | undefined): RunnerKind {
-    if (setting === 'vitest' || setting === 'jest') return setting
+export function selectRunner(
+    setting: TestRunnerSetting,
+    dependencies: ReadonlySet<string> | undefined,
+    fileName?: string
+): RunnerKind | null {
+    if (setting !== 'auto') return setting
+    if (fileName !== undefined && isCypressFile(fileName)) {
+        return dependencies?.has('cypress') ? 'cypress' : null
+    }
     if (dependencies?.has('vitest')) return 'vitest'
     if (dependencies?.has('jest')) return 'jest'
-    return 'vitest'
+    return null
 }

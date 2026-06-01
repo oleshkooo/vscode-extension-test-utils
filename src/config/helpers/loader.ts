@@ -19,6 +19,9 @@ function readWorkspaceConfig(cfg: WorkspaceConfiguration): unknown {
         },
         telemetry: {
             enabled: cfg.get('telemetry.enabled')
+        },
+        cypress: {
+            configs: cfg.get('cypress.configs')
         }
     }
 }

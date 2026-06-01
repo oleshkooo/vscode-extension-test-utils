@@ -14,6 +14,8 @@ import { TestRunner } from './runner/base-runner'
 import type { TestRunRequest } from './runner/types'
 import { pickTelemetryService } from './telemetry'
 import { TelemetryService } from './telemetry/base-telemetry.service'
+import { pickWorkspaceDependencies } from './workspace'
+import { WorkspaceDependencies } from './workspace/base-workspace-deps'
 
 export async function bootstrap(context: ExtensionContext): Promise<void> {
     const config = container.resolve(ConfigService)
@@ -43,6 +45,9 @@ function registerInfrastructure(config: ConfigService): void {
     container.register(Logger as InjectionToken<Logger>, { useToken: pickLogger() })
     container.register(TelemetryService as InjectionToken<TelemetryService>, { useToken: pickTelemetryService(config) })
     container.register(TestParser as InjectionToken<TestParser>, { useToken: pickTestParser() })
+    container.register(WorkspaceDependencies as InjectionToken<WorkspaceDependencies>, {
+        useToken: pickWorkspaceDependencies()
+    })
     container.register(TestRunner as InjectionToken<TestRunner>, { useToken: pickRunner() })
 }
 

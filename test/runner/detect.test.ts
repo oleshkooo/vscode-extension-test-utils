@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-    ancestorDirectories,
-    selectPackageManager,
-    selectRunner,
-    type LockfilePresence
-} from '../../src/runner/helpers/detect'
+import { selectPackageManager, selectRunner, type LockfilePresence } from '../../src/runner/helpers/detect'
 
 const NONE: LockfilePresence = { npm: false, yarn: false, pnpm: false, bun: false }
 
@@ -27,6 +22,7 @@ describe('selectRunner', () => {
     it('honours an explicit setting regardless of dependencies', () => {
         expect(selectRunner('jest', new Set(['vitest']))).toBe('jest')
         expect(selectRunner('vitest', new Set(['jest']))).toBe('vitest')
+        expect(selectRunner('cypress', new Set(['vitest']))).toBe('cypress')
     })
 
     it('detects the runner from dependencies when set to auto', () => {
@@ -38,27 +34,37 @@ describe('selectRunner', () => {
         expect(selectRunner('auto', new Set(['vitest', 'jest']))).toBe('vitest')
     })
 
-    it('falls back to vitest when nothing is detected', () => {
-        expect(selectRunner('auto', undefined)).toBe('vitest')
-        expect(selectRunner('auto', new Set())).toBe('vitest')
+    it('uses cypress for a .cy file when cypress is a dependency', () => {
+        expect(selectRunner('auto', new Set(['cypress', 'vitest']), 'login.cy.ts')).toBe('cypress')
+        expect(selectRunner('auto', new Set(['cypress']), 'cypress/e2e/login.cy.js')).toBe('cypress')
+    })
+
+    it('returns null for a .cy file when cypress is absent (no silent fallback)', () => {
+        expect(selectRunner('auto', new Set(['vitest']), 'login.cy.ts')).toBeNull()
+        expect(selectRunner('auto', new Set(), 'login.cy.ts')).toBeNull()
+    })
+
+    it('does not use cypress for non-.cy files even when cypress is present', () => {
+        expect(selectRunner('auto', new Set(['cypress', 'vitest']), 'math.test.ts')).toBe('vitest')
+    })
+
+    it('returns null when no known runner is in dependencies', () => {
+        expect(selectRunner('auto', undefined)).toBeNull()
+        expect(selectRunner('auto', new Set())).toBeNull()
+        expect(selectRunner('auto', new Set(['some-other-dep']), 'math.test.ts')).toBeNull()
     })
 })
 
-describe('ancestorDirectories', () => {
-    it('lists directories from the file dir up to the boundary, inclusive', () => {
-        expect(ancestorDirectories('/repo/packages/app/src', '/repo')).toEqual([
-            '/repo/packages/app/src',
-            '/repo/packages/app',
-            '/repo/packages',
-            '/repo'
-        ])
+describe('selectRunner — cypress file detection', () => {
+    it('treats *.cy.ts as a cypress candidate', () => {
+        expect(selectRunner('auto', new Set(['cypress']), 'login.cy.ts')).toBe('cypress')
     })
 
-    it('returns just the boundary when the file sits at the root', () => {
-        expect(ancestorDirectories('/repo', '/repo')).toEqual(['/repo'])
+    it('treats *.cy.js as a cypress candidate', () => {
+        expect(selectRunner('auto', new Set(['cypress']), 'cypress/e2e/login.cy.js')).toBe('cypress')
     })
 
-    it('returns nothing when the directory is outside the boundary', () => {
-        expect(ancestorDirectories('/elsewhere/src', '/repo')).toEqual([])
+    it('does not match *.cy.tsx', () => {
+        expect(selectRunner('auto', new Set(['cypress', 'vitest']), 'login.cy.tsx')).toBe('vitest')
     })
 })

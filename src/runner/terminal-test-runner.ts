@@ -1,13 +1,14 @@
-import { dirname, relative } from 'node:path'
+import { relative } from 'node:path'
 import { singleton } from 'tsyringe'
-import { Uri, workspace } from 'vscode'
+import { Uri, window, workspace } from 'vscode'
 import { ConfigService } from '../config/config.service'
 import { Logger } from '../logger/base-logger'
+import { WorkspaceDependencies } from '../workspace/base-workspace-deps'
 import { TestRunner } from './base-runner'
 import { buildRunnerCommand, RUNNER_SPECS } from './helpers/command'
-import { ancestorDirectories, selectPackageManager, selectRunner } from './helpers/detect'
+import { selectPackageManager, selectRunner } from './helpers/detect'
 import { TestTerminal } from './test-terminal'
-import type { PackageManager, RunnerKind, TestRunRequest } from './types'
+import type { PackageManager, TestRunRequest } from './types'
 
 const LOCKFILES = {
     npm: 'package-lock.json',
@@ -21,36 +22,45 @@ export class TerminalTestRunner extends TestRunner {
     constructor(
         private readonly logger: Logger,
         private readonly terminal: TestTerminal,
-        private readonly cfg: ConfigService
+        private readonly cfg: ConfigService,
+        private readonly workspaceDeps: WorkspaceDependencies
     ) {
         super()
     }
 
     async run(request: TestRunRequest): Promise<void> {
-        const root = await this.findProjectRoot(Uri.file(request.filePath))
-        const packageManager = await this.detectPackageManager(root)
-        const runner = await this.detectRunner(root)
+        const fileUri = Uri.file(request.filePath)
+        const { root, dependencies } = await this.workspaceDeps.forFile(fileUri)
+        const packageManagerPromise = this.detectPackageManager(root)
+        const runner = selectRunner(this.cfg.runner.runner, dependencies, request.filePath)
+        if (runner === null) {
+            this.logger.warn({ filePath: request.filePath }, 'test.run.noRunner')
+            window.showWarningMessage(
+                'No test runner detected. Install vitest, jest, or cypress, or set "oleshkoTestUtils.runner.runner" explicitly.'
+            )
+            return
+        }
+
         const file = root ? relative(root.fsPath, request.filePath) : request.filePath
 
+        let configFile: string | undefined
+        if (runner === 'cypress') {
+            const resolved = await this.resolveCypressConfig()
+            if (!resolved.ok) return
+            configFile = resolved.configFile
+        }
+
+        const packageManager = await packageManagerPromise
         const command = buildRunnerCommand({
             spec: RUNNER_SPECS[runner],
             packageManager,
             file,
-            testName: request.testName
+            testName: request.testName,
+            configFile
         })
 
         this.logger.info({ command, runner, packageManager }, 'test.run')
         this.terminal.run(command, root, this.cfg.runner.autoReveal)
-    }
-
-    private async findProjectRoot(fileUri: Uri): Promise<Uri | undefined> {
-        const workspaceFolder = workspace.getWorkspaceFolder(fileUri)?.uri
-        if (!workspaceFolder) return undefined
-
-        for (const dir of ancestorDirectories(dirname(fileUri.fsPath), workspaceFolder.fsPath)) {
-            if (await this.exists(Uri.file(dir), 'package.json')) return Uri.file(dir)
-        }
-        return workspaceFolder
     }
 
     private async detectPackageManager(folder: Uri | undefined): Promise<PackageManager> {
@@ -64,13 +74,6 @@ export class TerminalTestRunner extends TestRunner {
         return selectPackageManager({ npm, yarn, pnpm, bun })
     }
 
-    private async detectRunner(folder: Uri | undefined): Promise<RunnerKind> {
-        const setting = this.cfg.runner.runner
-        if (setting !== 'auto') return setting
-        const dependencies = folder ? await this.readDependencyNames(folder) : undefined
-        return selectRunner(setting, dependencies)
-    }
-
     private async exists(folder: Uri, name: string): Promise<boolean> {
         try {
             await workspace.fs.stat(Uri.joinPath(folder, name))
@@ -80,16 +83,17 @@ export class TerminalTestRunner extends TestRunner {
         }
     }
 
-    private async readDependencyNames(folder: Uri): Promise<ReadonlySet<string> | undefined> {
-        try {
-            const bytes = await workspace.fs.readFile(Uri.joinPath(folder, 'package.json'))
-            const json = JSON.parse(Buffer.from(bytes).toString('utf8')) as {
-                dependencies?: Record<string, string>
-                devDependencies?: Record<string, string>
-            }
-            return new Set([...Object.keys(json.dependencies ?? {}), ...Object.keys(json.devDependencies ?? {})])
-        } catch {
-            return undefined
-        }
+    private async resolveCypressConfig(): Promise<{ ok: boolean; configFile?: string }> {
+        const { configs } = this.cfg.cypress
+        const [first, ...rest] = configs
+        if (first === undefined) return { ok: true }
+        if (rest.length === 0) return { ok: true, configFile: first.configFile }
+
+        const picked = await window.showQuickPick(
+            configs.map(c => ({ label: c.name, description: c.configFile, configFile: c.configFile })),
+            { placeHolder: 'Select a Cypress environment' }
+        )
+        if (picked === undefined) return { ok: false }
+        return { ok: true, configFile: picked.configFile }
     }
 }

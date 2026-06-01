@@ -1,8 +1,8 @@
 {
     "name": "oleshko-test-utils",
     "displayName": "Oleshko's Test Utils",
-    "description": "Handy testing helpers for VS Code: run individual describe/it/test blocks with a click. Supports Vitest and Jest.",
-    "version": "0.1.0",
+    "description": "Handy testing helpers for VS Code: run individual describe/it/test blocks with a click. Supports Vitest, Jest, and Cypress.",
+    "version": "0.2.0",
     "publisher": "oleshko",
     "license": "MIT",
     "private": false,
@@ -30,6 +30,7 @@
         "testing",
         "vitest",
         "jest",
+        "cypress",
         "codelens"
     ],
     "activationEvents": [
@@ -58,10 +59,11 @@
                     "enum": [
                         "auto",
                         "vitest",
-                        "jest"
+                        "jest",
+                        "cypress"
                     ],
                     "default": "auto",
-                    "description": "Test runner to use. 'auto' detects Vitest or Jest from the workspace."
+                    "description": "Test runner to use. 'auto' detects Vitest or Jest from the workspace, and uses Cypress for *.cy.{js,ts} files."
                 },
                 "oleshkoTestUtils.runner.autoReveal": {
                     "type": "boolean",
@@ -77,6 +79,28 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Report anonymous usage telemetry through the VS Code telemetry channel. Respects the global telemetry setting."
+                },
+                "oleshkoTestUtils.cypress.configs": {
+                    "type": "array",
+                    "default": [],
+                    "description": "Cypress environments to choose from when running a *.cy.{js,ts} file. When more than one is set, a picker appears on each run; the chosen config is passed to Cypress as --config-file.",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "configFile"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Display name shown in the environment picker (e.g. 'staging')."
+                            },
+                            "configFile": {
+                                "type": "string",
+                                "description": "Path to the Cypress config file, relative to the project root (e.g. 'cypress.staging.config.ts')."
+                            }
+                        }
+                    }
                 }
             }
         }

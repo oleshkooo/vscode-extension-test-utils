@@ -1,11 +1,17 @@
 import { singleton } from 'tsyringe'
-import { CodeLens, EventEmitter, Range, workspace, type CodeLensProvider, type Event, type TextDocument } from 'vscode'
+import { EventEmitter, workspace, type CodeLens, type CodeLensProvider, type Event, type TextDocument } from 'vscode'
 import { ConfigService } from '../config/config.service'
-import { COMMAND_RUN_TEST, CONFIG_NAMESPACE } from '../constants'
+import { CONFIG_NAMESPACE } from '../constants'
 import { Lifecycle } from '../lifecycle/lifecycle'
 import { TestParser } from '../parser/base-parser'
 import type { TestBlock, TestFileLanguage } from '../parser/types'
-import type { TestRunRequest } from '../runner/types'
+import { selectRunner } from '../runner/helpers/detect'
+import { RUNNER_SPECS } from '../runner/helpers/command'
+import { WorkspaceDependencies } from '../workspace/base-workspace-deps'
+import { RunBlockLens } from './run-block-lens'
+import { RunFileLens } from './run-file-lens'
+
+const REFRESH_KEYS = [`${CONFIG_NAMESPACE}.codeLens`, `${CONFIG_NAMESPACE}.runner.runner`]
 
 @singleton()
 export class RunCodeLensProvider implements CodeLensProvider {
@@ -15,22 +21,31 @@ export class RunCodeLensProvider implements CodeLensProvider {
     constructor(
         private readonly parser: TestParser,
         private readonly cfg: ConfigService,
+        private readonly workspaceDeps: WorkspaceDependencies,
         lifecycle: Lifecycle
     ) {
         lifecycle.register(this.changed)
         lifecycle.register(
             workspace.onDidChangeConfiguration(event => {
-                if (event.affectsConfiguration(`${CONFIG_NAMESPACE}.codeLens`)) this.changed.fire()
+                if (REFRESH_KEYS.some(key => event.affectsConfiguration(key))) this.changed.fire()
             })
         )
+        lifecycle.register(workspaceDeps.onDidChange(() => this.changed.fire()))
     }
 
-    provideCodeLenses(document: TextDocument): CodeLens[] {
+    async provideCodeLenses(document: TextDocument): Promise<CodeLens[]> {
         if (!this.cfg.codeLens.enabled) return []
+
+        const filePath = document.uri.fsPath
+        const { dependencies } = await this.workspaceDeps.forFile(document.uri)
+        const runner = selectRunner(this.cfg.runner.runner, dependencies, filePath)
+        if (runner === null) return []
+
+        if (RUNNER_SPECS[runner].granularity === 'file') return [new RunFileLens(filePath)]
 
         const blocks = this.parser.parse(document.getText(), toLanguage(document.languageId))
         const lenses: CodeLens[] = []
-        this.collect(blocks, document.uri.fsPath, [], false, lenses)
+        this.collect(blocks, filePath, [], false, lenses)
         return lenses
     }
 
@@ -46,21 +61,11 @@ export class RunCodeLensProvider implements CodeLensProvider {
             const targetable = !ancestorsBroken && ownResolved
             const testName = targetable ? [...ancestors, block.title].join(' ') : undefined
 
-            out.push(this.lens(block, filePath, testName))
+            out.push(new RunBlockLens(block, filePath, testName))
 
             const childAncestors = ownResolved ? [...ancestors, block.title as string] : ancestors
             this.collect(block.children, filePath, childAncestors, ancestorsBroken || !ownResolved, out)
         }
-    }
-
-    private lens(block: TestBlock, filePath: string, testName: string | undefined): CodeLens {
-        const range = new Range(block.line, block.column, block.line, block.column)
-        const request: TestRunRequest = { filePath, testName }
-        return new CodeLens(range, {
-            title: '$(play) Run',
-            command: COMMAND_RUN_TEST,
-            arguments: [request]
-        })
     }
 }
 
