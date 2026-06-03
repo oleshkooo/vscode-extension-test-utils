@@ -3,6 +3,7 @@ import { singleton } from 'tsyringe'
 import { Uri, window, workspace, type QuickPickItem } from 'vscode'
 import { ConfigService } from '../config/config.service'
 import { Logger } from '../logger/base-logger'
+import { WorkspaceState } from '../state/base-workspace-state'
 import { WorkspaceDependencies } from '../workspace/base-workspace-deps'
 import { TestRunner } from './base-runner'
 import { buildRunnerCommand, RUNNER_SPECS } from './helpers/command'
@@ -31,6 +32,7 @@ const LOCKFILES = {
     pnpm: 'pnpm-lock.yaml',
     bun: 'bun.lockb'
 } as const
+const CYPRESS_LAST_CONFIG_KEY = 'cypress.lastConfigName'
 
 @singleton()
 export class TerminalTestRunner extends TestRunner {
@@ -40,9 +42,11 @@ export class TerminalTestRunner extends TestRunner {
         private readonly logger: Logger,
         private readonly terminal: TestTerminal,
         private readonly cfg: ConfigService,
-        private readonly workspaceDeps: WorkspaceDependencies
+        private readonly workspaceDeps: WorkspaceDependencies,
+        private readonly state: WorkspaceState
     ) {
         super()
+        this.lastPickedCypressConfig = state.get<string>(CYPRESS_LAST_CONFIG_KEY)
     }
 
     async run(request: TestRunRequest): Promise<void> {
@@ -112,6 +116,7 @@ export class TerminalTestRunner extends TestRunner {
         const picked = await this.pickCypressEnvironment(configs)
         if (picked === undefined) return { ok: false }
         this.lastPickedCypressConfig = picked.name
+        void this.state.set(CYPRESS_LAST_CONFIG_KEY, picked.name)
         return { ok: true, entry: picked }
     }
 

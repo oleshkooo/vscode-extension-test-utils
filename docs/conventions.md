@@ -73,6 +73,16 @@ register a new domain, add one line there. If you need to register a list
 `registerDiagnosticRules()` — bind several classes to the same
 `DIAGNOSTIC_RULE_TOKEN` and pull them via `@injectAll(...)`.
 
+### Interface-typed values (no class to use as token)
+
+Some things we want to inject aren't classes — `vscode.ExtensionContext` is the
+canonical case. Register them via `container.registerInstance(TOKEN, value)`
+with a **string token defined alongside the base class** that consumes them,
+and inject with `@inject(TOKEN)`. Example:
+[`EXTENSION_CONTEXT_TOKEN`](../src/state/base-workspace-state.ts) is registered
+at the top of `bootstrap()` (before `registerInfrastructure`, so anything
+resolved later can find it) and pulled by `VsCodeWorkspaceState`'s constructor.
+
 ### Resolving abstract bases
 
 TypeScript needs a cast. Always written the same way:
