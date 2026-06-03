@@ -1,6 +1,6 @@
 import { relative } from 'node:path'
 import { singleton } from 'tsyringe'
-import { Uri, window, workspace } from 'vscode'
+import { Uri, window, workspace, type QuickPickItem } from 'vscode'
 import { ConfigService } from '../config/config.service'
 import { Logger } from '../logger/base-logger'
 import { WorkspaceDependencies } from '../workspace/base-workspace-deps'
@@ -11,8 +11,13 @@ import { TestTerminal } from './test-terminal'
 import type { PackageManager, TestRunRequest } from './types'
 
 interface CypressConfigEntry {
+    readonly name: string
     readonly configFile: string
     readonly env?: Record<string, string>
+}
+
+interface CypressConfigPickItem extends QuickPickItem {
+    readonly entry: CypressConfigEntry
 }
 
 interface CypressConfigResolution {
@@ -29,6 +34,8 @@ const LOCKFILES = {
 
 @singleton()
 export class TerminalTestRunner extends TestRunner {
+    private lastPickedCypressConfig: string | undefined
+
     constructor(
         private readonly logger: Logger,
         private readonly terminal: TestTerminal,
@@ -102,11 +109,29 @@ export class TerminalTestRunner extends TestRunner {
         if (first === undefined) return { ok: true }
         if (rest.length === 0) return { ok: true, entry: first }
 
-        const picked = await window.showQuickPick(
-            configs.map(c => ({ label: c.name, description: c.configFile, entry: c })),
-            { placeHolder: 'Select a Cypress environment' }
-        )
+        const picked = await this.pickCypressEnvironment(configs)
         if (picked === undefined) return { ok: false }
-        return { ok: true, entry: picked.entry }
+        this.lastPickedCypressConfig = picked.name
+        return { ok: true, entry: picked }
+    }
+
+    private pickCypressEnvironment(configs: readonly CypressConfigEntry[]): Promise<CypressConfigEntry | undefined> {
+        return new Promise(resolve => {
+            const qp = window.createQuickPick<CypressConfigPickItem>()
+            qp.items = configs.map(c => ({ label: c.name, description: c.configFile, entry: c }))
+            qp.placeholder = 'Select a Cypress environment'
+            const last = qp.items.find(item => item.entry.name === this.lastPickedCypressConfig)
+            if (last) qp.activeItems = [last]
+            qp.onDidAccept(() => {
+                const item = qp.selectedItems[0]
+                qp.hide()
+                resolve(item?.entry)
+            })
+            qp.onDidHide(() => {
+                qp.dispose()
+                resolve(undefined)
+            })
+            qp.show()
+        })
     }
 }
