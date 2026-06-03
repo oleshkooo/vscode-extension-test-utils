@@ -2,7 +2,7 @@
     "name": "oleshko-test-utils",
     "displayName": "Oleshko's Test Utils",
     "description": "Handy testing helpers for VS Code: run individual describe/it/test blocks with a click. Supports Vitest, Jest, and Cypress.",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "publisher": "oleshko",
     "license": "MIT",
     "private": false,
