@@ -6,6 +6,7 @@ export interface BuildCommandInput {
     readonly file: string
     readonly testName?: string
     readonly configFile?: string
+    readonly env?: Record<string, string>
 }
 
 const EXEC_PREFIX: Record<PackageManager, readonly string[]> = {
@@ -28,8 +29,16 @@ export const RUNNER_SPECS: Record<RunnerKind, RunnerSpec> = {
     }
 }
 
-export function buildRunnerCommand({ spec, packageManager, file, testName, configFile }: BuildCommandInput): string {
+export function buildRunnerCommand({
+    spec,
+    packageManager,
+    file,
+    testName,
+    configFile,
+    env
+}: BuildCommandInput): string {
     return [
+        ...envAssignments(env),
         ...EXEC_PREFIX[packageManager],
         spec.binary,
         ...spec.baseArgs,
@@ -46,6 +55,11 @@ function flagArg(
 ): readonly string[] {
     if (!flag || !value) return []
     return [flag, shellQuote(transform(value))]
+}
+
+function envAssignments(env: Record<string, string> | undefined): readonly string[] {
+    if (!env) return []
+    return Object.entries(env).map(([key, value]) => `${key}=${shellQuote(value)}`)
 }
 
 function toPosixPath(value: string): string {

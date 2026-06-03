@@ -10,6 +10,16 @@ import { selectPackageManager, selectRunner } from './helpers/detect'
 import { TestTerminal } from './test-terminal'
 import type { PackageManager, TestRunRequest } from './types'
 
+interface CypressConfigEntry {
+    readonly configFile: string
+    readonly env?: Record<string, string>
+}
+
+interface CypressConfigResolution {
+    readonly ok: boolean
+    readonly entry?: CypressConfigEntry
+}
+
 const LOCKFILES = {
     npm: 'package-lock.json',
     yarn: 'yarn.lock',
@@ -44,10 +54,12 @@ export class TerminalTestRunner extends TestRunner {
         const file = root ? relative(root.fsPath, request.filePath) : request.filePath
 
         let configFile: string | undefined
+        let env: Record<string, string> | undefined
         if (runner === 'cypress') {
             const resolved = await this.resolveCypressConfig()
             if (!resolved.ok) return
-            configFile = resolved.configFile
+            configFile = resolved.entry?.configFile
+            env = resolved.entry?.env
         }
 
         const packageManager = await packageManagerPromise
@@ -56,7 +68,8 @@ export class TerminalTestRunner extends TestRunner {
             packageManager,
             file,
             testName: request.testName,
-            configFile
+            configFile,
+            env
         })
 
         this.logger.info({ command, runner, packageManager }, 'test.run')
@@ -83,17 +96,17 @@ export class TerminalTestRunner extends TestRunner {
         }
     }
 
-    private async resolveCypressConfig(): Promise<{ ok: boolean; configFile?: string }> {
+    private async resolveCypressConfig(): Promise<CypressConfigResolution> {
         const { configs } = this.cfg.cypress
         const [first, ...rest] = configs
         if (first === undefined) return { ok: true }
-        if (rest.length === 0) return { ok: true, configFile: first.configFile }
+        if (rest.length === 0) return { ok: true, entry: first }
 
         const picked = await window.showQuickPick(
-            configs.map(c => ({ label: c.name, description: c.configFile, configFile: c.configFile })),
+            configs.map(c => ({ label: c.name, description: c.configFile, entry: c })),
             { placeHolder: 'Select a Cypress environment' }
         )
         if (picked === undefined) return { ok: false }
-        return { ok: true, configFile: picked.configFile }
+        return { ok: true, entry: picked.entry }
     }
 }

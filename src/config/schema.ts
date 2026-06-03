@@ -16,7 +16,8 @@ const TELEMETRY_DEFAULTS = {
 
 const cypressConfigEntrySchema = z.object({
     name: z.string(),
-    configFile: z.string()
+    configFile: z.string(),
+    env: z.record(z.string(), z.string()).optional()
 })
 
 export type Config = z.infer<typeof configSchema>

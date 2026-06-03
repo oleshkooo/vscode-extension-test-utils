@@ -54,6 +54,38 @@ describe('buildRunnerCommand', () => {
         )
     })
 
+    it('prepends env vars as KEY=value assignments', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.cypress,
+            packageManager: 'npm',
+            file: 'cypress/e2e/login.cy.ts',
+            configFile: 'cypress.staging.config.ts',
+            env: { CYPRESS_LOCAL: 'true', API_URL: 'https://staging.example' }
+        })
+        expect(command).toBe(
+            "CYPRESS_LOCAL='true' API_URL='https://staging.example' npx cypress run --spec 'cypress/e2e/login.cy.ts' --config-file 'cypress.staging.config.ts'"
+        )
+    })
+
+    it('shell-quotes env values with spaces and quotes', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.cypress,
+            packageManager: 'npm',
+            file: 'a.cy.ts',
+            env: { MSG: "it's tricky" }
+        })
+        expect(command).toBe("MSG='it'\\''s tricky' npx cypress run --spec 'a.cy.ts'")
+    })
+
+    it('omits env prefix when none given', () => {
+        const command = buildRunnerCommand({
+            spec: RUNNER_SPECS.cypress,
+            packageManager: 'npm',
+            file: 'a.cy.ts'
+        })
+        expect(command).toBe("npx cypress run --spec 'a.cy.ts'")
+    })
+
     it('ignores a config file for runners without a config-file flag', () => {
         const command = buildRunnerCommand({
             spec: RUNNER_SPECS.vitest,

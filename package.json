@@ -98,6 +98,13 @@
                             "configFile": {
                                 "type": "string",
                                 "description": "Path to the Cypress config file, relative to the project root (e.g. 'cypress.staging.config.ts')."
+                            },
+                            "env": {
+                                "type": "object",
+                                "description": "Environment variables prepended to the run command (e.g. { \"CYPRESS_LOCAL\": \"true\" }). Bash/zsh/fish only.",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
                             }
                         }
                     }
